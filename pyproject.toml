@@ -3,13 +3,13 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "markitdown"
+name = "markitdown-mcp"
 dynamic = ["version"]
-description = 'Utility tool for converting various files to Markdown'
+description = 'MCP Server for MarkItDown - Document to Markdown conversion utility'
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
-keywords = []
+keywords = ["mcp", "markdown", "document-conversion", "markitdown"]
 authors = [
   { name = "Adam Fourney", email = "adamfo@microsoft.com" },
 ]
@@ -24,12 +24,16 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dependencies = [
+  "mcp>=1.12.0",
+  "uvicorn",
+  "starlette",
   "beautifulsoup4",
   "requests",
   "markdownify",
   "magika~=0.6.1",
   "charset-normalizer",
   "defusedxml",
+  "httpx",
 ]
 
 [project.optional-dependencies]
@@ -69,6 +73,10 @@ path = "src/markitdown/__about__.py"
 
 [project.scripts]
 markitdown = "markitdown.__main__:main"
+markitdown-mcp = "markitdown_server:cli_main"
+
+[tool.setuptools]
+py-modules = ["markitdown_server"]
 
 [tool.hatch.envs.default]
 features = ["all"]
@@ -109,4 +117,7 @@ exclude_lines = [
 ]
 
 [tool.hatch.build.targets.sdist]
-only-include = ["src/markitdown"]
+only-include = ["src/markitdown", "tools", "markitdown_server.py"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/markitdown", "tools"]

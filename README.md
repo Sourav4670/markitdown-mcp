@@ -1,4 +1,4 @@
-# MarkItDown
+# MarkItDown MCP Server
 
 [![PyPI](https://img.shields.io/pypi/v/markitdown.svg)](https://pypi.org/project/markitdown/)
 ![PyPI - Downloads](https://img.shields.io/pypi/dd/markitdown)
@@ -7,7 +7,11 @@
 > [!IMPORTANT]
 > MarkItDown performs I/O with the privileges of the current process. Like open() or requests.get(), it will access resources that the process itself can access. Sanitize your inputs in untrusted environments, and call the narrowest `convert_*` function needed for your use case (e.g., `convert_stream()`, or `convert_local()`). See the [Security Considerations](#security-considerations) section of the documentation for more information.
 
-MarkItDown is a lightweight Python utility for converting various files to Markdown for use with LLMs and related text analysis pipelines. To this end, it is most comparable to [textract](https://github.com/deanmalmgren/textract), but with a focus on preserving important document structure and content as Markdown (including: headings, lists, tables, links, etc.) While the output is often reasonably presentable and human-friendly, it is meant to be consumed by text analysis tools -- and may not be the best option for high-fidelity document conversions for human consumption.
+## Overview
+
+This is an **MCP (Model Context Protocol) Server** for MarkItDown, a lightweight Python utility for converting various files to Markdown for use with LLMs and related text analysis pipelines. The server provides three tools for document conversion through multiple transport modes (Streamable HTTP, SSE, and stdio).
+
+### Supported File Formats
 
 MarkItDown currently supports the conversion from:
 
@@ -34,13 +38,14 @@ Markdown-formatted text, and understand it well. As a side benefit, Markdown con
 are also highly token-efficient.
 
 ## Prerequisites
-MarkItDown requires Python 3.10 or higher. It is recommended to use a virtual environment to avoid dependency conflicts.
+
+MarkItDown MCP Server requires Python 3.10 or higher. It is recommended to use a virtual environment to avoid dependency conflicts.
 
 With the standard Python installation, you can create and activate a virtual environment using the following commands:
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 ```
 
 If using `uv`, you can create a virtual environment with:
@@ -60,17 +65,132 @@ conda activate markitdown
 
 ## Installation
 
-To install MarkItDown, use pip: `pip install 'markitdown[all]'`. Alternatively, you can install it from the source:
+To install MarkItDown MCP Server with all optional dependencies, use pip:
 
 ```bash
-git clone git@github.com:microsoft/markitdown.git
-cd markitdown
-pip install -e 'packages/markitdown[all]'
+pip install -e ".[all]"
 ```
 
-## Usage
+Alternatively, you can install it from the source:
 
-### Command-Line
+```bash
+git clone <repository-url>
+cd markitdown-tool
+pip install -e ".[all]"
+```
+
+## MCP Server Usage
+
+### Available Tools
+
+The server provides three tools:
+
+1. **convert_to_markdown** - Convert documents from URIs (http:, https:, file:, data:)
+2. **convert_local_file** - Convert local files by absolute/relative path
+3. **convert_stream** - Convert content from strings/streams with optional file extension hint
+
+### Transport Modes
+
+#### 1. Streamable HTTP (Recommended)
+
+```bash
+# Start server on default port 8000
+markitdown-mcp --mode streamable-http --port 8000
+
+# Start on custom port
+markitdown-mcp --mode streamable-http --port 3001 --host 127.0.0.1
+```
+
+**Health Check:**
+```bash
+curl http://localhost:8000/health
+# Response: {"status":"ok"}
+```
+
+**Server Info:**
+```bash
+curl http://localhost:8000/
+# Response: {"status":"ok","transport":"streamable-http","server":"markitdown-mcp","tools":3}
+```
+
+#### 2. Server-Sent Events (SSE)
+
+```bash
+markitdown-mcp --mode sse --port 8000
+```
+
+#### 3. Standard I/O (stdio)
+
+```bash
+markitdown-mcp --mode stdio
+```
+
+### Environment Variables
+
+- **MARKITDOWN_ENABLE_PLUGINS** - Enable MarkItDown plugins (true/false, default: false)
+
+## Docker Deployment
+
+### Build Docker Image
+
+```bash
+docker build -t markitdown-mcp .
+```
+
+### Run with Docker
+
+**Default Port (8000):**
+```bash
+docker run -p 8000:8000 markitdown-mcp
+```
+
+**Custom Port:**
+```bash
+docker run -e PORT=3001 -p 3001:3001 markitdown-mcp
+```
+
+**Enable Plugins:**
+```bash
+docker run -e MARKITDOWN_ENABLE_PLUGINS=true -e PORT=8000 -p 8000:8000 markitdown-mcp
+```
+
+**Mount Local Directory (for file: URIs):**
+```bash
+docker run -v /path/to/docs:/workdir -e PORT=8000 -p 8000:8000 markitdown-mcp
+```
+
+## MCP Client Configuration
+
+### Claude Desktop (Streamable HTTP)
+
+Add to your `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "markitdown": {
+      "type": "streamable-http",
+      "url": "http://localhost:8000/mcp",
+      "description": "MarkItDown document conversion with 3 tools"
+    }
+  }
+}
+```
+
+### MCP Client (stdio)
+
+```json
+{
+  "mcpServers": {
+    "markitdown": {
+      "command": "markitdown-mcp",
+      "args": ["--mode", "stdio"]
+    }
+  }
+}
+```
+
+## Command-Line Usage (MarkItDown Library)
 
 ```bash
 markitdown path-to-file.pdf > document.md

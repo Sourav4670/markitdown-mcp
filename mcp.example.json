@@ -1,0 +1,70 @@
+{
+  "mcpServers": {
+    "markitdown": {
+      "type": "streamable-http",
+      "url": "http://localhost:8000/mcp",
+      "description": "MarkItDown document to Markdown conversion server with 3 tools"
+    }
+  },
+  "mcpServers_alternative_configs": {
+    "markitdown_sse": {
+      "type": "sse",
+      "url": "http://localhost:8000/sse",
+      "description": "MarkItDown with SSE transport"
+    },
+    "markitdown_stdio": {
+      "command": "markitdown-mcp",
+      "args": ["--mode", "stdio"],
+      "description": "MarkItDown with stdio transport"
+    },
+    "markitdown_custom_port": {
+      "type": "streamable-http",
+      "url": "http://localhost:3001/mcp",
+      "description": "MarkItDown on custom port 3001"
+    }
+  },
+  "notes": {
+    "tools": [
+      {
+        "name": "convert_to_markdown",
+        "description": "Convert documents from URIs (http:, https:, file:, data:)",
+        "example": {
+          "uri": "https://example.com/document.pdf"
+        }
+      },
+      {
+        "name": "convert_local_file",
+        "description": "Convert local files by path",
+        "example": {
+          "file_path": "/path/to/document.docx"
+        }
+      },
+      {
+        "name": "convert_stream",
+        "description": "Convert content from strings/streams",
+        "example": {
+          "content": "Hello, world!",
+          "file_extension": ".txt"
+        }
+      }
+    ],
+    "environment_variables": {
+      "MARKITDOWN_ENABLE_PLUGINS": "Set to 'true' to enable MarkItDown plugins (default: false)"
+    },
+    "supported_formats": [
+      "PDF",
+      "PowerPoint (.pptx)",
+      "Word (.docx)",
+      "Excel (.xlsx, .xls)",
+      "Images (with OCR)",
+      "Audio (with transcription)",
+      "HTML",
+      "CSV",
+      "JSON",
+      "XML",
+      "ZIP files",
+      "EPub",
+      "YouTube URLs"
+    ]
+  }
+}
